@@ -1,0 +1,16 @@
+nNodes
+node1 backward
+node1 forward
+node2 backward
+node2 forward
+
+every backward/forward format:
+nodeID  hubNumbers  hub1.ID     hub1.Dist   hub2.ID     hub2.Dist ...
+
+3
+1       2           2           3           3           4
+1       2           2           3           3           4
+2       1           1           4  
+2       1           3           1
+3       2           1           2           2           1
+3       2           1           3           2           4
