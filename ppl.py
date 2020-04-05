@@ -1,6 +1,7 @@
 import sys
 import time
 import os
+import networkx as nx
 
 index_file_path = "ppl.idx"
 
@@ -14,7 +15,22 @@ class PrunedLandmarkLabeling(object):
             self.index = self.load_index(index_file_path)
 
     def read_graph(self, map_file_name):
-        return None
+        G = nx.Graph()
+        f = open(map_file_name, 'r')
+        data = f.readlines()
+        f.close()
+        for idx, lines in enumerate(data):
+            if (idx == 0):
+                continue
+            if (idx == 1):
+                node_num, edge_num = lines.split(" ")
+                G.add_nodes_from([*range(int(node_num))])
+                continue
+            src, dest, dist, is_one_way = lines.split(" ")
+            G.add_edge(src, dest, {len: dist})
+            if (is_one_way == "0"):
+                G.add_edge(dest, src, {len: dist})
+        return G
 
     def query(self, src, dest):
         return 0
