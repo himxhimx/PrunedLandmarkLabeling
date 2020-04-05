@@ -9,9 +9,12 @@ class PrunedLandmarkLabeling(object):
         super(PrunedLandmarkLabeling, self).__init__()
         if (map_file_name != ""):
             self.graph = self.read_graph(map_file_name)
-            self.index = self.build_index(map_file_name, order_mode)
+            self.index = self.build_index(order_mode)
         else:
             self.index = self.load_index(index_file_path)
+
+    def read_graph(self, map_file_name):
+        return None
 
     def query(self, src, dest):
         return 0
