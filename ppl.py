@@ -2,6 +2,7 @@ import sys
 import time
 import os
 import networkx as nx
+import pylab
 
 index_file_path = "ppl.idx"
 
@@ -29,7 +30,7 @@ class PrunedLandmarkLabeling(object):
             src, dest, dist, is_one_way = lines.split(" ")
             G.add_weighted_edges_from([(src, dest, dist)])
             if (is_one_way == "0"):
-                G.add_weighted_edges_from([(dest, src, dist)])
+                G.add_weighted_edges_from([(dest, src, dist)])    
         return G
 
     def query(self, src, dest):
@@ -50,7 +51,7 @@ class PrunedLandmarkLabeling(object):
         if (mode == 1):
             self.vertex_order = gen_degree_base_order()
 
-    def build_index(self, map_file_name, order_mode):
+    def build_index(self, order_mode):
         return []
 
 
