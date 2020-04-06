@@ -21,16 +21,12 @@ class PrunedLandmarkLabeling(object):
         data = f.readlines()
         f.close()
         for idx, lines in enumerate(data):
-            if (idx == 0):
-                continue
-            if (idx == 1):
-                node_num, edge_num = lines.split(" ")
-                G.add_nodes_from(range(int(node_num)))
+            if (idx < 2):
                 continue
             src, dest, dist, is_one_way = lines.split(" ")
-            G.add_weighted_edges_from([(int(src), int(dest), int(dist))])
+            G.add_weighted_edges_from([(src, dest, int(dist))])
             if (is_one_way == "0"):
-                G.add_weighted_edges_from([(int(dest), int(src), int(dist))])    
+                G.add_weighted_edges_from([(dest, src, int(dist))])    
         # print(G.edges())
         # print(G.nodes())
         return G
@@ -66,10 +62,15 @@ class PrunedLandmarkLabeling(object):
     def build_index(self, order_mode = 0):
         self.gen_order(order_mode)
         result = {}
+        print(self.graph.nodes())
         for v in self.graph.nodes():
-            result[v] = {"backward": {}, "forward": {}}
-        
-        return {}
+            result[v] = {"backward": [], "forward": []}
+        for order_item in self.vertex_order.items():
+            cur_node = order_item[0]
+            result[cur_node]["backward"].append((cur_node, 0))
+            result[cur_node]["forward"].append((cur_node, 0))
+        print(result)
+        return result
 
 
 if __name__ == "__main__":
