@@ -4,6 +4,7 @@ import os
 import networkx as nx
 import pylab
 import queue as Q
+import json
 
 index_file_path = "ppl.idx"
 max_length = 999999999
@@ -19,27 +20,12 @@ class PrunedLandmarkLabeling(object):
 
     def write_index(self):
         f = open(index_file_path, 'w')
-        f.writelines(str(len(self.graph.nodes)) + "\n")
-        write_data = []
+        # f.writelines(str(len(self.graph.nodes)) + "\n")
         # print("Index:")
-        for k in self.index:
+        # for k in self.index:
             # print(k)
             # print(self.index[k])
-            data = self.index[k]["backward"]
-            line = k + " " + str(len(data))
-            for hub in data:
-                line += " " + hub[0] + " " + str(hub[1])
-            line += "\n"
-            write_data.append(line)
-
-            data = self.index[k]["forward"]
-            line = k + " " + str(len(data))
-            for hub in data:
-                line += " " + hub[0] + " " + str(hub[1])
-            line += "\n"
-            write_data.append(line)
-        # print(write_data)
-        f.writelines(write_data)
+        f.writelines(json.dumps(self.index))
         f.close()
 
     def read_graph(self, map_file_name):
