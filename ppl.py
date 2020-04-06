@@ -133,12 +133,13 @@ class PrunedLandmarkLabeling(object):
         if (self.vertex_order[src] < self.vertex_order[dest]):
             return False
         try:
-            v = nx.shortest_path_length(self.graph, source = src, target=dest, weight="weight")
+            # v = nx.shortest_path_length(self.graph, source = src, target=dest, weight="weight")
+            v = dist
         except:
             v = max_length
         # print("%s -> %s: %d" % (src, dest, v))
-        if (self.query(src, dest) == v):
-            return False
+        # if (self.query(src, dest) < v):
+        #     return False
         return True
 
     def build_index(self, order_mode = 0):
@@ -185,7 +186,7 @@ class PrunedLandmarkLabeling(object):
             while (not pq.empty()):
                 cur_dist, src = pq.get()
                 # print("Pop: (%s %d)"%(src,cur_dist))
-                if (has_process[src] or not self.need_to_expand(cur_node, src)):
+                if (has_process[src] or not self.need_to_expand(src, cur_node)):
                     continue
                 has_process[src] = True
                 self.index[src]["backward"].append((cur_node, cur_dist))
