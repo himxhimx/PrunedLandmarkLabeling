@@ -33,10 +33,47 @@ class PrunedLandmarkLabeling(object):
         return G
 
     def query(self, src, dest):
-        return 0
+        #src_idx = self.index.get(src,None)
+        #dest_idx = self.index.get(dest,None)
+        #if src_idx and dest_idx:
+        #    src_list = src_idx.get("backward",None)
+        #    dest_list = dest_idx.get("forward",None)
+        src_list = self.index[src]["backward"]
+        dest_list = self.index[dest]["forward"]
 
-    def load_index(self):
-        return []
+        #print(src_list)
+        #print(dest_list)
+
+        return ()
+
+    def load_index(self, index_file_path):
+        #G = nx.DiGraph()
+        #f = open(index_file_path, 'r')
+        #data = f.readlines()
+        #f.close()
+        #for idx, lines in enumerate(data):
+        #    if (idx < 1)
+        #        continue
+        result = {
+	        "1": {
+                "backward": [1,0],
+		        "forward": [(1,0)]
+	        },
+	        "2": {
+		        "backward": [(1,21),(2,0)],
+		        "forward": [(1,1),(2,0)]
+	        },
+	        "3": {
+		        "backward": [(1,10),(2,1),(3,0)],
+		        "forward": [(1,3),(2,15),(3.0)]
+	        },
+            "4": {
+                "backward": [(1,8),(2,3),(3,2),(4,0)],
+                "forward": [(1,5),(2,13),(3,2),(4,0)]
+            }
+        }
+        #print(result)
+        return result
 
     def gen_test_order(self):
         result = {}
