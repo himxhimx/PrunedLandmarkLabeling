@@ -6,6 +6,7 @@ import pylab
 import queue as Q
 
 index_file_path = "ppl.idx"
+max_length = 999999999
 
 class PrunedLandmarkLabeling(object):
     def __init__(self, map_file_name = "", order_mode = 0):
@@ -20,10 +21,10 @@ class PrunedLandmarkLabeling(object):
         f = open(index_file_path, 'w')
         f.writelines(str(len(self.graph.nodes)) + "\n")
         write_data = []
-        print("Index:")
+        # print("Index:")
         for k in self.index:
-            print(k)
-            print(self.index[k])
+            # print(k)
+            # print(self.index[k])
             data = self.index[k]["backward"]
             line = k + " " + str(len(data))
             for hub in data:
@@ -61,7 +62,7 @@ class PrunedLandmarkLabeling(object):
         return G
 
     def query(self, src, dest):
-        return 9999999
+        return max_length
 
     def load_index(self):
         return []
@@ -87,14 +88,17 @@ class PrunedLandmarkLabeling(object):
         if (mode == 2):
             self.vertex_order = self.gen_degree_base_order()
         self.vertex_order = {k: v for k, v in sorted(self.vertex_order.items(), key=lambda item: -item[1])}
-        print("vertex order: ")
-        print(self.vertex_order)
-        print("")
+        # print("vertex order: ")
+        # print(self.vertex_order)
+        # print("")
 
     def need_to_expand(self, src, dest, dist = -1):
         if (self.vertex_order[src] < self.vertex_order[dest]):
             return False
-        v = nx.shortest_path_length(self.graph, source = src, target=dest, weight="weight")
+        try:
+            v = nx.shortest_path_length(self.graph, source = src, target=dest, weight="weight")
+        except:
+            v = max_length
         # print("%s -> %s: %d" % (src, dest, v))
         if (self.query(src, dest) == v):
             return False
@@ -109,9 +113,13 @@ class PrunedLandmarkLabeling(object):
             self.index[v] = {"backward": [], "forward": []}
             has_process[v] = False
 
+        i = 0
+        nNode = len(self.graph.nodes())
         for order_item in self.vertex_order.items():
             cur_node = order_item[0]
+            i += 1
             # Calculate Forward
+            print("Caculating %s (%d/%d) forward ... " % (cur_node, i, nNode))
             pq.put((0, cur_node))
             for k in has_process:
                 has_process[k] = False
@@ -133,6 +141,7 @@ class PrunedLandmarkLabeling(object):
                     # print("Push: (%s, %d)"%(dest, cur_dist + weight))
 
             # Calculate Backward
+            print("Caculating %s (%d/%d) forward..." % (cur_node, i, nNode))
             pq.put((0, cur_node))
             for k in has_process:
                 has_process[k] = False
@@ -155,7 +164,7 @@ class PrunedLandmarkLabeling(object):
 
             # print("")
         self.write_index()
-        
+
         return self.index
 
 
