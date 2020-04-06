@@ -3,6 +3,7 @@ import time
 import os
 import networkx as nx
 import pylab
+import queue as Q
 
 index_file_path = "ppl.idx"
 
@@ -25,7 +26,7 @@ class PrunedLandmarkLabeling(object):
                 continue
             src, dest, dist, is_one_way = lines.split(" ")
             G.add_weighted_edges_from([(src, dest, int(dist))])
-            if (is_one_way == "0"):
+            if (int(is_one_way) == 0):
                 G.add_weighted_edges_from([(dest, src, int(dist))])    
         # print(G.edges())
         # print(G.nodes())
@@ -58,18 +59,26 @@ class PrunedLandmarkLabeling(object):
         if (mode == 2):
             self.vertex_order = self.gen_degree_base_order()
         self.vertex_order = {k: v for k, v in sorted(self.vertex_order.items(), key=lambda item: -item[1])}
+        # print("vertex order: ")
+        # print(self.vertex_order)
 
     def build_index(self, order_mode = 0):
         self.gen_order(order_mode)
         result = {}
-        print(self.graph.nodes())
         for v in self.graph.nodes():
             result[v] = {"backward": [], "forward": []}
         for order_item in self.vertex_order.items():
             cur_node = order_item[0]
             result[cur_node]["backward"].append((cur_node, 0))
             result[cur_node]["forward"].append((cur_node, 0))
-        print(result)
+            pq = Q.PriorityQueue()
+            pq.put((0, cur_node))
+            while (not pq.empty()):
+                item = pq.get()
+                edges = self.graph[item[1]]
+                print(item[1])
+                print(edges)
+        # print(result)
         return result
 
 
