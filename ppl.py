@@ -6,6 +6,7 @@ import pylab
 import queue as Q
 
 index_file_path = "ppl.idx"
+max_length = 999999999
 
 class PrunedLandmarkLabeling(object):
     def __init__(self, map_file_name = "", order_mode = 0):
@@ -15,6 +16,31 @@ class PrunedLandmarkLabeling(object):
             self.index = self.build_index(order_mode)
         else:
             self.index = self.load_index(index_file_path)
+
+    def write_index(self):
+        f = open(index_file_path, 'w')
+        f.writelines(str(len(self.graph.nodes)) + "\n")
+        write_data = []
+        # print("Index:")
+        for k in self.index:
+            # print(k)
+            # print(self.index[k])
+            data = self.index[k]["backward"]
+            line = k + " " + str(len(data))
+            for hub in data:
+                line += " " + hub[0] + " " + str(hub[1])
+            line += "\n"
+            write_data.append(line)
+
+            data = self.index[k]["forward"]
+            line = k + " " + str(len(data))
+            for hub in data:
+                line += " " + hub[0] + " " + str(hub[1])
+            line += "\n"
+            write_data.append(line)
+        # print(write_data)
+        f.writelines(write_data)
+        f.close()
 
     def read_graph(self, map_file_name):
         G = nx.DiGraph()
@@ -28,11 +54,15 @@ class PrunedLandmarkLabeling(object):
             G.add_weighted_edges_from([(src, dest, int(dist))])
             if (int(is_one_way) == 0):
                 G.add_weighted_edges_from([(dest, src, int(dist))])    
+        # print("G.edges:")
         # print(G.edges())
+        # print("G.nodes:")
         # print(G.nodes())
+        # print("")
         return G
 
     def query(self, src, dest):
+<<<<<<< HEAD
         #src_idx = self.index.get(src,None)
         #dest_idx = self.index.get(dest,None)
         #if src_idx and dest_idx:
@@ -74,12 +104,18 @@ class PrunedLandmarkLabeling(object):
         }
         #print(result)
         return result
+=======
+        return max_length
+
+    def load_index(self):
+        return []
+>>>>>>> 94169f822d43b5474522239e50d6a4afb3fc8c0e
 
     def gen_test_order(self):
         result = {}
         nNodes = len(self.graph.nodes())
         for idx, v in enumerate(self.graph.nodes()):
-            result[v] = idx
+            result[v] = nNodes - idx
         return result
 
     def gen_random_order(self):
@@ -98,25 +134,82 @@ class PrunedLandmarkLabeling(object):
         self.vertex_order = {k: v for k, v in sorted(self.vertex_order.items(), key=lambda item: -item[1])}
         # print("vertex order: ")
         # print(self.vertex_order)
+        # print("")
+
+    def need_to_expand(self, src, dest, dist = -1):
+        if (self.vertex_order[src] < self.vertex_order[dest]):
+            return False
+        try:
+            v = nx.shortest_path_length(self.graph, source = src, target=dest, weight="weight")
+        except:
+            v = max_length
+        # print("%s -> %s: %d" % (src, dest, v))
+        if (self.query(src, dest) == v):
+            return False
+        return True
 
     def build_index(self, order_mode = 0):
         self.gen_order(order_mode)
-        result = {}
+        self.index = {}
+        has_process = {}
+        pq = Q.PriorityQueue()
         for v in self.graph.nodes():
-            result[v] = {"backward": [], "forward": []}
+            self.index[v] = {"backward": [], "forward": []}
+            has_process[v] = False
+
+        i = 0
+        nNode = len(self.graph.nodes())
         for order_item in self.vertex_order.items():
             cur_node = order_item[0]
-            result[cur_node]["backward"].append((cur_node, 0))
-            result[cur_node]["forward"].append((cur_node, 0))
-            pq = Q.PriorityQueue()
+            i += 1
+            # Calculate Forward
+            print("Caculating %s (%d/%d) forward ... " % (cur_node, i, nNode))
             pq.put((0, cur_node))
+            for k in has_process:
+                has_process[k] = False
             while (not pq.empty()):
-                item = pq.get()
-                edges = self.graph[item[1]]
-                print(item[1])
-                print(edges)
-        # print(result)
-        return result
+                cur_dist, src = pq.get()
+                # print("Pop: (%s %d)"%(src,cur_dist))
+                if (has_process[src] or not self.need_to_expand(cur_node, src)):
+                    continue
+                has_process[src] = True
+                self.index[src]["forward"].append((cur_node, cur_dist))
+                edges = self.graph.out_edges(src)
+                # print(src)
+                # print(edges)
+                for _, dest in edges:
+                    weight = self.graph.get_edge_data(src, dest)['weight']
+                    if (has_process[dest]):
+                        continue
+                    pq.put((cur_dist + weight, dest))
+                    # print("Push: (%s, %d)"%(dest, cur_dist + weight))
+
+            # Calculate Backward
+            print("Caculating %s (%d/%d) forward..." % (cur_node, i, nNode))
+            pq.put((0, cur_node))
+            for k in has_process:
+                has_process[k] = False
+            while (not pq.empty()):
+                cur_dist, src = pq.get()
+                # print("Pop: (%s %d)"%(src,cur_dist))
+                if (has_process[src] or not self.need_to_expand(cur_node, src)):
+                    continue
+                has_process[src] = True
+                self.index[src]["backward"].append((cur_node, cur_dist))
+                edges = self.graph.in_edges(src)
+                # print(src)
+                # print(edges)
+                for dest, _ in edges:
+                    weight = self.graph.get_edge_data(dest, src)['weight']
+                    if (has_process[dest]):
+                        continue
+                    pq.put((cur_dist + weight, dest))
+                    # print("Push: (%s, %d)"%(dest, cur_dist + weight))
+
+            # print("")
+        self.write_index()
+
+        return self.index
 
 
 if __name__ == "__main__":
