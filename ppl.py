@@ -62,7 +62,6 @@ class PrunedLandmarkLabeling(object):
         return G
 
     def query(self, src, dest):
-<<<<<<< HEAD
         #src_idx = self.index.get(src,None)
         #dest_idx = self.index.get(dest,None)
         #if src_idx and dest_idx:
@@ -104,12 +103,6 @@ class PrunedLandmarkLabeling(object):
         }
         #print(result)
         return result
-=======
-        return max_length
-
-    def load_index(self):
-        return []
->>>>>>> 94169f822d43b5474522239e50d6a4afb3fc8c0e
 
     def gen_test_order(self):
         result = {}
