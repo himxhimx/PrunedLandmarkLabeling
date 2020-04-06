@@ -69,11 +69,14 @@ class PrunedLandmarkLabeling(object):
         #    dest_list = dest_idx.get("forward",None)
         src_list = self.index[src]["backward"]
         dest_list = self.index[dest]["forward"]
-
+        result = max_length
+        for (src, s_dist) in src_list:
+            for (dest, d_dist) in dest_list:
+                if (src == dest and result > s_dist + d_dist):
+                    result = s_dist + d_dist
         #print(src_list)
         #print(dest_list)
-
-        return ()
+        return result
 
     def load_index(self, index_file_path):
         #G = nx.DiGraph()
