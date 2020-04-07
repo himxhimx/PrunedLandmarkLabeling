@@ -2,7 +2,8 @@ import sys
 import time
 import os
 import networkx as nx
-import pylab
+import random
+#import pylab
 import queue as Q
 import json
 
@@ -79,7 +80,15 @@ class PrunedLandmarkLabeling(object):
         return result
 
     def gen_random_order(self):
-        return {}
+        result = {}
+        nNodes = len(self.graph.nodes())
+        # print(list(self.graph.nodes()))
+        nodes_list = list(self.graph.nodes())
+        random.shuffle(nodes_list)
+        # print(nodes_list)
+        for idx, v in enumerate(nodes_list):
+            result[v] = nNodes - idx
+        return result
 
     def gen_degree_base_order(self):
         return {}
@@ -146,7 +155,7 @@ class PrunedLandmarkLabeling(object):
                     # print("Push: (%s, %d)"%(dest, cur_dist + weight))
 
             # Calculate Backward
-            print("Caculating %s (%d/%d) forward..." % (cur_node, i, nNode))
+            print("Caculating %s (%d/%d) backward..." % (cur_node, i, nNode))
             pq.put((0, cur_node))
             for k in has_process:
                 has_process[k] = False
