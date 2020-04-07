@@ -21,10 +21,10 @@ class PrunedLandmarkLabeling(object):
     def write_index(self):
         f = open(index_file_path, 'w')
         # f.writelines(str(len(self.graph.nodes)) + "\n")
-        # print("Index:")
-        # for k in self.index:
-            # print(k)
-            # print(self.index[k])
+        print("Index:")
+        for k in self.index:
+            print(k)
+            print(self.index[k])
         f.writelines(json.dumps(self.index))
         f.close()
 
@@ -119,17 +119,23 @@ class PrunedLandmarkLabeling(object):
         # print("")
 
     def need_to_expand(self, src, dest, dist = -1):
-        if (self.vertex_order[src] < self.vertex_order[dest]):
+        
+        # cur_ans = self.query(src, dest)
+        cur_ans = max_length
+        if (cur_ans > dist):
+            return True
+        else:
             return False
-        try:
-            # v = nx.shortest_path_length(self.graph, source = src, target=dest, weight="weight")
-            v = dist
-        except:
-            v = max_length
-        # print("%s -> %s: %d" % (src, dest, v))
-        # if (self.query(src, dest) < v):
-        #     return False
-        return True
+
+        # try:
+        #     # v = nx.shortest_path_length(self.graph, source = src, target=dest, weight="weight")
+        #     v = dist
+        # except:
+        #     v = max_length
+        # # print("%s -> %s: %d" % (src, dest, v))
+        # # if (self.query(src, dest) < v):
+        # #     return False
+        # return True
 
     def build_index(self, order_mode = 0):
         self.gen_order(order_mode)
@@ -153,7 +159,8 @@ class PrunedLandmarkLabeling(object):
             while (not pq.empty()):
                 cur_dist, src = pq.get()
                 # print("Pop: (%s %d)"%(src,cur_dist))
-                if (has_process[src] or not self.need_to_expand(cur_node, src)):
+                if (has_process[src] or self.vertex_order[cur_node] < self.vertex_order[src] or not self.need_to_expand(cur_node, src)):
+                    has_process[src] = True
                     continue
                 has_process[src] = True
                 self.index[src]["forward"].append((cur_node, cur_dist))
@@ -175,7 +182,7 @@ class PrunedLandmarkLabeling(object):
             while (not pq.empty()):
                 cur_dist, src = pq.get()
                 # print("Pop: (%s %d)"%(src,cur_dist))
-                if (has_process[src] or not self.need_to_expand(src, cur_node)):
+                if (has_process[src] or self.vertex_order[cur_node] < self.vertex_order[src] or not self.need_to_expand(src, cur_node)):
                     continue
                 has_process[src] = True
                 self.index[src]["backward"].append((cur_node, cur_dist))
