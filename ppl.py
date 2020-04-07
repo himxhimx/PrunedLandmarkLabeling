@@ -223,7 +223,10 @@ class PrunedLandmarkLabeling(object):
             dest = random.choice(node_list)
             print("Testing %s -> %s:" % (src, dest))
             start_time = time.time()
-            nx_result = nx.shortest_path_length(self.graph, source=src, target=dest, weight="weight")
+            try:
+                nx_result = nx.shortest_path_length(self.graph, source=src, target=dest, weight="weight")
+            except:
+                nx_result = max_length
             interval_time = time.time()
             my_result = self.query(src, dest)
             end_time = time.time()
