@@ -199,6 +199,7 @@ class PrunedLandmarkLabeling(object):
         node_list = list(self.graph.nodes())
         nx_times = 0.0
         pll_times = 0.0
+        pass_cases = 0
         # print(node_list)
         for _ in range(times):
             src = random.choice(node_list)
@@ -216,10 +217,13 @@ class PrunedLandmarkLabeling(object):
             print("ppl: %d, time: %f" % (my_result, end_time - interval_time))
             nx_times += interval_time - start_time
             pll_times += end_time - interval_time
+            if (my_result == nx_result):
+                pass_cases += 1
 
         print("Total Test Times: %d" % times)
         print("Networkx Average Time: %f" % (nx_times / times))
         print("PLL Average Time: %f" % (pll_times / times))
+        print("Pass Cases: %d/%d" % (pass_cases, times))
         return 0
 
 
