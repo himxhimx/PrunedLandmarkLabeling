@@ -26,12 +26,13 @@ class PrunedLandmarkLabeling(object):
     def write_index(self):
         f = open(index_file_path, 'w')
         # f.writelines(str(len(self.graph.nodes)) + "\n")
-        print("Total call nx.shortest_path time: %d" % self.call_nx_count)
         print("Index:")
         for k in self.index:
             print(k)
             print(self.index[k])
-        f.writelines(json.dumps(self.index))
+        write_data = json.dumps(self.index)
+        print("Index Size: %d Bytes" % len(write_data))
+        f.writelines(write_data)
         f.close()
 
     def read_graph(self, map_file_name):
