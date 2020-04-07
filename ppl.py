@@ -124,24 +124,6 @@ class PrunedLandmarkLabeling(object):
         # print("")
 
     def need_to_expand(self, src, dest, dist = -1):
-        
-        # cur_ans = self.query(src, dest)
-        # cur_ans = max_length
-        # if (cur_ans > dist):
-        #     return True
-        # else:
-        #     return False
-        
-        # try:
-        #     v = self.cache_dist[src][dest]
-        # except:
-        #     try:
-        #         self.call_nx_count += 1
-        #         v = nx.shortest_path_length(self.graph, source = src, target=dest, weight="weight")
-        #         self.cache_dist[src][dest] = v
-        #     except:
-        #         v = max_length
-
         # print("nx: %s -> %s: %d" % (src, dest, v))
         our_result = self.query(src, dest)
         v = dist
