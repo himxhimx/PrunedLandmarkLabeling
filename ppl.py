@@ -68,11 +68,20 @@ class PrunedLandmarkLabeling(object):
         #    dest_list = dest_idx.get("forward",None)
         src_list = self.index[src]["backward"]
         dest_list = self.index[dest]["forward"]
+        i = 0
+        j = 0
         result = max_length
-        for (src, s_dist) in src_list:
-            for (dest, d_dist) in dest_list:
-                if (src == dest and result > s_dist + d_dist):
-                    result = s_dist + d_dist
+        while i < len(src_list) and j < len(dest_list):
+            if (src_list[i][0] == dest_list[j][0] and result > src_list[i][1] + dest_list[j][1]):
+                result = src_list[i][1] + dest_list[j][1]
+            elif src_list[i][0] < dest_list[j][0]:
+                i += 1
+            else:
+                j += 1
+        #for (src, s_dist) in src_list:
+        #    for (dest, d_dist) in dest_list:
+        #        if (src == dest and result > s_dist + d_dist):
+        #            result = s_dist + d_dist
         #print(src_list)
         #print(dest_list)
         return result
