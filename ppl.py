@@ -11,17 +11,22 @@ index_file_path = "ppl.idx"
 max_length = 999999999
 
 class PrunedLandmarkLabeling(object):
-    def __init__(self, map_file_name = "", order_mode = 0):
+    def __init__(self, map_file_name = "", order_mode = 0, validation = False):
         super(PrunedLandmarkLabeling, self).__init__()
-        if (map_file_name != ""):
-            self.graph = self.read_graph(map_file_name)
-            self.index = self.build_index(order_mode)
+        if (not validation):
+            if (map_file_name != ""):
+                self.graph = self.read_graph(map_file_name)
+                self.index = self.build_index(order_mode)
+            else:
+                self.index = self.load_index(index_file_path)
         else:
+            self.graph = self.read_graph(map_file_name)
             self.index = self.load_index(index_file_path)
 
     def write_index(self):
         f = open(index_file_path, 'w')
         # f.writelines(str(len(self.graph.nodes)) + "\n")
+        print("Total call nx.shortest_path time: %d" % self.call_nx_count)
         print("Index:")
         for k in self.index:
             print(k)
@@ -40,7 +45,13 @@ class PrunedLandmarkLabeling(object):
             src, dest, dist, is_one_way = lines.split(" ")
             G.add_weighted_edges_from([(src, dest, int(dist))])
             if (int(is_one_way) == 0):
-                G.add_weighted_edges_from([(dest, src, int(dist))])    
+                G.add_weighted_edges_from([(dest, src, int(dist))])
+
+        self.call_nx_count = 0
+        self.cache_dist = {}
+        for v in G.nodes():
+            self.cache_dist[v] = {}    
+
         # print("G.edges:")
         # print(G.edges())
         # print("G.nodes:")
@@ -77,6 +88,12 @@ class PrunedLandmarkLabeling(object):
         nNodes = len(self.graph.nodes())
         for idx, v in enumerate(self.graph.nodes()):
             result[v] = nNodes - idx
+        # result['c'] = 6
+        # result['d'] = 5
+        # result['e'] = 4
+        # result['f'] = 3
+        # result['a'] = 2
+        # result['b'] = 1
         return result
 
     def gen_random_order(self):
@@ -108,21 +125,29 @@ class PrunedLandmarkLabeling(object):
     def need_to_expand(self, src, dest, dist = -1):
         
         # cur_ans = self.query(src, dest)
-        cur_ans = max_length
-        if (cur_ans > dist):
-            return True
-        else:
-            return False
-
+        # cur_ans = max_length
+        # if (cur_ans > dist):
+        #     return True
+        # else:
+        #     return False
+        
         # try:
-        #     # v = nx.shortest_path_length(self.graph, source = src, target=dest, weight="weight")
-        #     v = dist
+        #     v = self.cache_dist[src][dest]
         # except:
-        #     v = max_length
-        # # print("%s -> %s: %d" % (src, dest, v))
-        # # if (self.query(src, dest) < v):
-        # #     return False
-        # return True
+        #     try:
+        #         self.call_nx_count += 1
+        #         v = nx.shortest_path_length(self.graph, source = src, target=dest, weight="weight")
+        #         self.cache_dist[src][dest] = v
+        #     except:
+        #         v = max_length
+
+        # print("nx: %s -> %s: %d" % (src, dest, v))
+        our_result = self.query(src, dest)
+        v = dist
+        # print("pll: %s -> %s: %d" % (src, dest, our_result))
+        if (our_result <= v):
+            return False
+        return True
 
     def build_index(self, order_mode = 0):
         self.gen_order(order_mode)
@@ -146,7 +171,7 @@ class PrunedLandmarkLabeling(object):
             while (not pq.empty()):
                 cur_dist, src = pq.get()
                 # print("Pop: (%s %d)"%(src,cur_dist))
-                if (has_process[src] or self.vertex_order[cur_node] < self.vertex_order[src] or not self.need_to_expand(cur_node, src)):
+                if (has_process[src] or self.vertex_order[cur_node] < self.vertex_order[src] or not self.need_to_expand(cur_node, src, cur_dist)):
                     has_process[src] = True
                     continue
                 has_process[src] = True
@@ -169,7 +194,7 @@ class PrunedLandmarkLabeling(object):
             while (not pq.empty()):
                 cur_dist, src = pq.get()
                 # print("Pop: (%s %d)"%(src,cur_dist))
-                if (has_process[src] or self.vertex_order[cur_node] < self.vertex_order[src] or not self.need_to_expand(src, cur_node)):
+                if (has_process[src] or self.vertex_order[cur_node] < self.vertex_order[src] or not self.need_to_expand(src, cur_node, cur_dist)):
                     continue
                 has_process[src] = True
                 self.index[src]["backward"].append((cur_node, cur_dist))
@@ -185,15 +210,48 @@ class PrunedLandmarkLabeling(object):
 
             # print("")
         self.write_index()
-
         return self.index
+
+    def validation(self, times = 10):
+        node_list = list(self.graph.nodes())
+        nx_times = 0.0
+        pll_times = 0.0
+        # print(node_list)
+        for _ in range(times):
+            src = random.choice(node_list)
+            dest = random.choice(node_list)
+            print("Testing %s -> %s:" % (src, dest))
+            start_time = time.time()
+            nx_result = nx.shortest_path_length(self.graph, source=src, target=dest, weight="weight")
+            interval_time = time.time()
+            my_result = self.query(src, dest)
+            end_time = time.time()
+            print("nx: %d, time: %f" % (nx_result, interval_time - start_time))
+            print("ppl: %d, time: %f" % (my_result, end_time - interval_time))
+            nx_times += interval_time - start_time
+            pll_times += end_time - interval_time
+
+        print("Total Test Times: %d" % times)
+        print("Networkx Average Time: %f" % (nx_times / times))
+        print("PLL Average Time: %f" % (pll_times / times))
+        return 0
 
 
 if __name__ == "__main__":
-    if (len(sys.argv) < 2 or not sys.argv[1] in ("build", "query")):
-        print("Usage: python ppl.py [ build | query ]")
+    if (len(sys.argv) < 2 or not sys.argv[1] in ("build", "query", "test")):
+        print("Usage: python ppl.py [ build | query | test]")
         sys.exit(2)
     
+    if (sys.argv[1] == "test"):
+        ppl = PrunedLandmarkLabeling(sys.argv[2], 0, True)
+        if (len(sys.argv) == 3):
+            ppl.validation(10)
+        else:
+            ppl.validation(int(sys.argv[3]))
+            sys.exit(0)
+        
+        sys.exit(2)
+
     if (sys.argv[1] == "build"):
         if (len(sys.argv) < 3):
             print("Usage: python ppl.py build [map_file_name] [order_mode]")
