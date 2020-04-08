@@ -118,7 +118,15 @@ class PrunedLandmarkLabeling(object):
         return result
 
     def gen_degree_base_order(self):
-        return {}
+        result = {}
+        #print(self.graph.nodes())
+        nNodes = len(self.graph.nodes())
+        nodes_list = list(sorted(self.graph.degree, key=lambda x: x[1], reverse=True))
+        #print(list(sorted(self.graph.degree, key=lambda x: x[1], reverse=True)))
+        for idx, v in enumerate(nodes_list):
+            result[v[0]] = nNodes - idx
+        #    print(v[0], result[v[0]])
+        return result
 
     def gen_order(self, mode = 0):
         if (mode == 0):
