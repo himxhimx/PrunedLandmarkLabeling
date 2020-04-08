@@ -26,13 +26,15 @@ class PrunedLandmarkLabeling(object):
     def write_index(self):
         f = open(index_file_path, 'w')
         # f.writelines(str(len(self.graph.nodes)) + "\n")
-        print("Index:")
-        for k in self.index:
-            print(k)
-            print(self.index[k])
+        # print("Index:")
+        # for k in self.index:
+        #     print(k)
+        #     print(self.index[k])
         write_data = json.dumps(self.index)
         print("Index Size: %d Bytes" % len(write_data))
-        f.writelines(write_data)
+        f.write(write_data)
+        f.write('\n')
+        f.write(json.dumps(self.vertex_order))
         f.close()
 
     def read_graph(self, map_file_name):
@@ -47,11 +49,6 @@ class PrunedLandmarkLabeling(object):
             G.add_weighted_edges_from([(src, dest, int(dist))])
             if (int(is_one_way) == 0):
                 G.add_weighted_edges_from([(dest, src, int(dist))])
-
-        self.call_nx_count = 0
-        self.cache_dist = {}
-        for v in G.nodes():
-            self.cache_dist[v] = {}    
 
         # print("G.edges:")
         # print(G.edges())
@@ -74,7 +71,7 @@ class PrunedLandmarkLabeling(object):
         while i < len(src_list) and j < len(dest_list):
             if (src_list[i][0] == dest_list[j][0] and result > src_list[i][1] + dest_list[j][1]):
                 result = src_list[i][1] + dest_list[j][1]
-            elif src_list[i][0] < dest_list[j][0]:
+            elif self.vertex_order[src_list[i][0]] > self.vertex_order[dest_list[j][0]]:
                 i += 1
             else:
                 j += 1
@@ -88,8 +85,9 @@ class PrunedLandmarkLabeling(object):
 
     def load_index(self, index_file_path):
         f = open(index_file_path, 'r')
-        data = f.read()
-        result = json.loads(data)
+        data = f.readlines()
+        result = json.loads(data[0])
+        self.vertex_order = json.loads(data[1])
         f.close()
         return result
 
