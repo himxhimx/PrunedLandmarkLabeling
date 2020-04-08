@@ -6,6 +6,7 @@ import random
 #import pylab
 import queue as Q
 import json
+import threading
 
 index_file_path = "ppl.idx"
 max_length = 999999999
@@ -16,7 +17,8 @@ class PrunedLandmarkLabeling(object):
         if (not validation):
             if (map_file_name != ""):
                 self.graph = self.read_graph(map_file_name)
-                self.index = self.build_index(order_mode)
+                # self.index = self.build_index(order_mode)
+                self.index = self.build_index_multi_thread(order_mode)
             else:
                 self.index = self.load_index(index_file_path)
         else:
@@ -126,6 +128,10 @@ class PrunedLandmarkLabeling(object):
         #    print(v[0], result[v[0]])
         return result
 
+    def gen_betweeness_base_order(self):
+        result = {}
+        b = nx.betweenness_centrality(self.graph, weight="weight")
+
     def gen_order(self, mode = 0):
         if (mode == 0):
             self.vertex_order = self.gen_test_order()
@@ -210,6 +216,73 @@ class PrunedLandmarkLabeling(object):
         self.write_index()
         return self.index
 
+    def build_forward_index(self, cur_node):
+        has_process = {}
+        pq = Q.PriorityQueue()
+        pq.put((0, cur_node))
+        for k in self.graph.nodes():
+            has_process[k] = False
+        while (not pq.empty()):
+            cur_dist, src = pq.get()
+            # print("[Forward] Pop: (%s %d)"%(src,cur_dist))
+            if (has_process[src] or self.vertex_order[cur_node] < self.vertex_order[src] or not self.need_to_expand(cur_node, src, cur_dist)):
+                has_process[src] = True
+                continue
+            has_process[src] = True
+            self.index[src]["forward"].append((cur_node, cur_dist))
+            edges = self.graph.out_edges(src)
+            # print(src)
+            # print(edges)
+            for _, dest in edges:
+                weight = self.graph.get_edge_data(src, dest)['weight']
+                if (has_process[dest]):
+                    continue
+                pq.put((cur_dist + weight, dest))
+                # print("[Forward] Push: (%s, %d)"%(dest, cur_dist + weight))
+
+    def build_backward_index(self, cur_node):
+        has_process = {}
+        pq = Q.PriorityQueue()
+        pq.put((0, cur_node))
+        for k in self.graph.nodes():
+            has_process[k] = False
+        while (not pq.empty()):
+            cur_dist, src = pq.get()
+            # print("[Backward] Pop: (%s %d)"%(src,cur_dist))
+            if (has_process[src] or self.vertex_order[cur_node] < self.vertex_order[src] or not self.need_to_expand(src, cur_node, cur_dist)):
+                continue
+            has_process[src] = True
+            self.index[src]["backward"].append((cur_node, cur_dist))
+            edges = self.graph.in_edges(src)
+            # print(src)
+            # print(edges)
+            for dest, _ in edges:
+                weight = self.graph.get_edge_data(dest, src)['weight']
+                if (has_process[dest]):
+                    continue
+                pq.put((cur_dist + weight, dest))
+                # print("[Backward] Push: (%s, %d)"%(dest, cur_dist + weight))
+
+    def build_index_multi_thread(self, order_mode = 0):
+        self.gen_order(order_mode)
+        self.index = {}
+        for v in self.graph.nodes():
+            self.index[v] = {"backward": [], "forward": []}
+
+        nNode = len(self.graph.nodes())
+        for i, order_item in enumerate(self.vertex_order.items()):
+            cur_node = order_item[0]
+            print("Caculating %s (%d/%d)... " % (cur_node, i, nNode))   
+            forward_thread = threading.Thread(target=self.build_forward_index, args=(cur_node,))
+            backward_thread = threading.Thread(target=self.build_backward_index, args=(cur_node,))
+            forward_thread.start()
+            backward_thread.start()
+            forward_thread.join()
+            backward_thread.join()
+            # print("")
+        self.write_index()
+        return self.index
+    
     def validation(self, times = 10):
         node_list = list(self.graph.nodes())
         nx_times = 0.0
@@ -244,7 +317,7 @@ class PrunedLandmarkLabeling(object):
 
 if __name__ == "__main__":
     if (len(sys.argv) < 2 or not sys.argv[1] in ("build", "query", "test")):
-        print("Usage: python ppl.py [ build | query | test]")
+        print("Usage: python ppl.py [ build | query | test ]")
         sys.exit(2)
     
     if (sys.argv[1] == "test"):
@@ -265,7 +338,7 @@ if __name__ == "__main__":
         start_time = time.time()
         if (len(sys.argv) == 3):
             ppl = PrunedLandmarkLabeling(sys.argv[2])
-        else:
+        elif (len(sys.argv) == 4):
             ppl = PrunedLandmarkLabeling(sys.argv[2], int(sys.argv[3]))    
         print("Total time: %f" % (time.time() - start_time))
     else:
