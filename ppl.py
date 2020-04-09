@@ -7,6 +7,7 @@ import random
 import queue as Q
 import json
 import threading
+import multiprocessing
 
 index_file_path = "ppl.idx"
 max_length = 999999999
@@ -18,7 +19,8 @@ class PrunedLandmarkLabeling(object):
             if (map_file_name != ""):
                 self.graph = self.read_graph(map_file_name)
                 # self.index = self.build_index(order_mode)
-                self.index = self.build_index_multi_thread(order_mode)
+                # self.index = self.build_index_multi_thread(order_mode)
+                self.index = self.build_index_multi_process(order_mode)
             else:
                 self.index = self.load_index(index_file_path)
         else:
@@ -288,6 +290,26 @@ class PrunedLandmarkLabeling(object):
             backward_thread.start()
             forward_thread.join()
             backward_thread.join()
+            # print("")
+        self.write_index()
+        return self.index
+
+    def build_index_multi_process(self, order_mode = 0):
+        self.gen_order(order_mode)
+        self.index = {}
+        for v in self.graph.nodes():
+            self.index[v] = {"backward": [], "forward": []}
+
+        nNode = len(self.graph.nodes())
+        for i, order_item in enumerate(self.vertex_order.items()):
+            cur_node = order_item[0]
+            print("Caculating %s (%d/%d)... " % (cur_node, i, nNode))
+            forward_process = multiprocessing.Process(target=self.build_forward_index, args=(cur_node,))
+            backward_process = multiprocessing.Process(target=self.build_backward_index, args=(cur_node,))
+            forward_process.start()
+            backward_process.start()
+            forward_process.join()
+            backward_process.join()
             # print("")
         self.write_index()
         return self.index
