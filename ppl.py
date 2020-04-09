@@ -130,7 +130,14 @@ class PrunedLandmarkLabeling(object):
 
     def gen_betweeness_base_order(self):
         result = {}
-        b = nx.betweenness_centrality(self.graph, weight="weight")
+        nNodes = len(self.graph.nodes())
+        nodes_list = nx.betweenness_centrality(self.graph, weight="weight")
+        nodes_list = list(sorted(nodes_list.items(), key=lambda item:item[1], reverse = True))
+        # print(nodes_list)
+        for idx, v in enumerate(nodes_list):
+            result[v[0]] = nNodes - idx
+        # print(result)
+        return result
 
     def gen_order(self, mode = 0):
         if (mode == 0):
@@ -139,6 +146,8 @@ class PrunedLandmarkLabeling(object):
             self.vertex_order = self.gen_random_order()
         if (mode == 2):
             self.vertex_order = self.gen_degree_base_order()
+        if (mode == 3):
+            self.vertex_order = self.gen_betweeness_base_order()
         self.vertex_order = {k: v for k, v in sorted(self.vertex_order.items(), key=lambda item: -item[1])}
         # print("vertex order: ")
         # print(self.vertex_order)
