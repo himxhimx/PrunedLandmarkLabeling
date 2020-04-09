@@ -8,19 +8,22 @@ import queue as Q
 import json
 import threading
 import multiprocessing
+import getopt
 
 index_file_path = "ppl.idx"
 max_length = 999999999
 
 class PrunedLandmarkLabeling(object):
-    def __init__(self, map_file_name = "", order_mode = 0, validation = False):
+    def __init__(self, map_file_name = "", order_mode = 0, validation = False, is_multi_process = False):
         super(PrunedLandmarkLabeling, self).__init__()
         if (not validation):
             if (map_file_name != ""):
                 self.graph = self.read_graph(map_file_name)
-                # self.index = self.build_index(order_mode)
-                # self.index = self.build_index_multi_thread(order_mode)
-                self.index = self.build_index_multi_process(order_mode)
+                if (is_multi_process):
+                    # self.index = self.build_index_multi_thread(order_mode)
+                    self.index = self.build_index_multi_process(order_mode)
+                else:
+                    self.index = self.build_index(order_mode)
             else:
                 self.index = self.load_index(index_file_path)
         else:
@@ -345,42 +348,110 @@ class PrunedLandmarkLabeling(object):
         print("Pass Cases: %d/%d" % (pass_cases, times))
         return 0
 
+def usage(argv = []):
+    print("Usage: python pll.py [ build | query | test ]")
+
+def build(argv):
+    map_file_name = ""
+    order_mode = 0
+    is_multi_process = False
+    help_msg = "python pll.py build -i [input_file] -o [order_mode] -m(use multi-process)"
+    try:
+        options, args = getopt.getopt(argv, "hi:o:m", ["help", "input=", "order_mode=", "multi_process"])
+        for name, value in options:
+            if name in ("-h", "--help"):
+                print(help_msg)
+                return 2
+            if name in ("-i", "--input"):
+                map_file_name = value
+            if name in ("-o", "--order_mode"):
+                order_mode = int(value)
+            if name in ("-m", "--multi_process"):
+                is_multi_process = True
+    except:
+        print(help_msg)
+        return 2
+    
+    if (map_file_name == ""):
+        print(help_msg)
+        return 2
+
+    start_time = time.time()
+    ppl = PrunedLandmarkLabeling(map_file_name, order_mode, False, is_multi_process)
+    print("Total time: %f" % (time.time() - start_time))
+    return 0
+
+def query(argv):
+    help_msg = "python pll.py query -s [src_vectex] -t [target_vectex]"
+    src_vertex = ""
+    target_vertex = ""
+    try:
+        options, args = getopt.getopt(argv, "hs:t:", ["help", "src=", "target="])
+        for name, value in options:
+            if name in ("-h", "--help"):
+                print(help_msg)
+                return 2
+            if name in ("-s", "--src"):
+                src_vertex = value
+            if name in ("-t", "--target"):
+                target_vertex = value
+    except:
+        print(help_msg)
+        return 2
+
+    start_time = time.time()
+    ppl = PrunedLandmarkLabeling()
+    print(ppl.query(src_vertex, target_vertex))
+    print("Total time: %f" % (time.time() - start_time))
+    return 0
+
+
+def test(argv):
+    help_msg = "python pll.py test -t [times] -m [map_file]"
+    times = 10
+    map_file_name = ""
+    try:
+        options, args = getopt.getopt(argv, "ht:m:", ["help", "times=", "map_file="])
+        for name, value in options:
+            if name in ("-h", "--help"):
+                print(help_msg)
+                return 2
+            if name in ("-t", "--target"):
+                times = int(value)
+            if name in ("-m", "--map_file"):
+                map_file_name = value
+    except:
+        print(help_msg)
+        return 2
+
+    if (map_file_name == ""):
+        print(help_msg)
+        return 2
+
+    ppl = PrunedLandmarkLabeling(map_file_name, 0, True)
+    ppl.validation(times)
+    return 0
+
+action = {
+        "build": build,
+        "query": query,
+        "test": test,
+        "help": usage
+    }
 
 if __name__ == "__main__":
-    if (len(sys.argv) < 2 or not sys.argv[1] in ("build", "query", "test")):
-        print("Usage: python ppl.py [ build | query | test ]")
+    if (len(sys.argv) < 2):
+        usage()
         sys.exit(2)
     
-    if (sys.argv[1] == "test"):
-        ppl = PrunedLandmarkLabeling(sys.argv[2], 0, True)
-        if (len(sys.argv) == 3):
-            ppl.validation(10)
-        else:
-            ppl.validation(int(sys.argv[3]))
-            sys.exit(0)
-        
-        sys.exit(2)
+    action = {
+        "build": build,
+        "query": query,
+        "test": test,
+        "help": usage
+    }
 
-    if (sys.argv[1] == "build"):
-        if (len(sys.argv) < 3):
-            print("Usage: python ppl.py build [map_file_name] [order_mode]")
-            sys.exit(2)
-
-        start_time = time.time()
-        if (len(sys.argv) == 3):
-            ppl = PrunedLandmarkLabeling(sys.argv[2])
-        elif (len(sys.argv) == 4):
-            ppl = PrunedLandmarkLabeling(sys.argv[2], int(sys.argv[3]))    
-        print("Total time: %f" % (time.time() - start_time))
-    else:
-        if (len(sys.argv) < 4):
-            print("Usage: python ppl.py query [src_vertex] [dest_vertex]")
-            sys.exit(2)
-        start_time = time.time()
-        ppl = PrunedLandmarkLabeling()
-        print(ppl.query(sys.argv[2], sys.argv[3]))
-        print("Total time: %f" % (time.time() - start_time))
-
+    sys.exit(action.get(sys.argv[1], usage)(sys.argv[2:]))
 
 
     
