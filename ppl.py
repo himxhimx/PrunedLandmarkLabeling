@@ -329,7 +329,7 @@ class PrunedLandmarkLabeling(object):
             print("Testing %s -> %s:" % (src, dest))
             start_time = time.time()
             try:
-                nx_result = nx.shortest_path_length(self.graph, source=src, target=dest, weight="weight")
+                nx_result = nx.dijkstra_path_length(self.graph, source=src, target=dest, weight="weight")
             except:
                 nx_result = max_length
             interval_time = time.time()
@@ -347,7 +347,7 @@ class PrunedLandmarkLabeling(object):
         print("PLL Average Time: %f" % (pll_times / times))
         print("Pass Cases: %d/%d" % (pass_cases, times))
         return 0
-
+    
 def usage(argv = []):
     print("Usage: python pll.py [ build | query | test ]")
 
