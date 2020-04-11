@@ -9,7 +9,7 @@
         * 1: degree-based order, that means the vectices ordered by the degree of vectex descending
         * 2: betweeness-based order, that means the vectices ordered by the betweeness of vectex descending
     * Addition Feature
-      * -m: usge multi-thread.
+      * -m: use multi-thread.
   * Query distance
     * python pll.py query -s [src_vertex] -t [target_vectex]
       * src_vertex: the source vertex of the query
